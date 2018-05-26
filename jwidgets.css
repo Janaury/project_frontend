@@ -1,0 +1,115 @@
+
+/*表格（分页器样式）*/
+.j_table{
+    width:100%;
+    border:solid 1px #34495e;
+    border-collapse: collapse;
+    border-radius: 0 0 10px 10px;
+}
+.j_table tr,td,th{
+    border:solid 1px #7b7d80;
+}
+.j_table thead{
+    background-color: #34495e;
+    color: white;
+    font-size:30px;
+    line-height: 40px;
+}
+.j_table tbody tr:hover{
+    background-color: antiquewhite;
+}
+.j_table tbody{
+    line-height: 30px;
+}
+.j_pagination{
+    display: flex;
+    padding: 0;
+    max-height: 10%;
+}
+.j_pagination li{
+    display: inline-flex;
+    background-color: #34495e;
+    color: white;
+    width: 50px;
+    border-radius: 5px;
+    cursor: pointer;
+    user-select: none;
+    outline:none;
+    height: 25px;
+    line-height: 25px;
+    margin: 5px;
+    justify-content: center;
+}
+
+.j_pagination li:hover{
+    background-color: #44617e;
+}
+
+
+/*导航栏*/
+.j_navigation{
+    margin-bottom: 2%;
+    margin-top: 2%;
+    height: 6%;
+    width: 90%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color:#34495e;
+    border-radius: 10px;
+    color:white
+}
+.j_navigation div{
+    display:inline-flex;
+    align-items: center;
+    height: 100%;
+}
+.j_navigation input{
+    border: none;
+    outline: none;
+    height:100%;
+    width: 10em;
+    background-color:#1abc9c;
+    color:white;
+    border-radius: 10px 0 0 10px;
+    padding:0 0 0 20px;
+    font-size:20px;
+}
+.j_navigation input::-webkit-input-placeholder{
+    color:white;
+    font-size:20px;
+    font-weight: bold;
+}
+.j_navigation button{
+    height: 100%;
+    background-color: #34495e;
+    color: white;
+    padding:5px 20px 5px 20px;
+    border: none;
+    outline:none;
+}
+.j_navigation button:hover{
+    background-color: #44617e;
+}
+.j_navigation button:active{
+    background-color: #2b3c4d;
+}
+
+/*Button Indicator*/
+.j_big_indicator_buttons{
+    display: flex;
+    width:100%;
+    flex-direction: column;
+    align-items: center;
+}
+.j_big_indicator_buttons button{
+    width:80%;
+    margin:10px;
+    height:50px;
+    border:none;
+    font-size:1.25em;
+    outline: none;
+    color: white;
+    background-color: #19997f;
+    border-radius: 5px;
+}

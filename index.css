@@ -6,10 +6,9 @@ body{
     font-size: 20px;
 }
 table{
-    border:none;
-    width:100%;
     text-align: center;
 }
+
 thead{
     background-color: #34495e;
     color: white;
@@ -190,10 +189,8 @@ tbody{
 #source_view{
     height:100%;
     width:100%;
-    display:none;
     flex-direction: column;
     align-items: center;
-    display: none;
 }
 
 #strategy_view{
@@ -275,7 +272,7 @@ tbody{
     display: flex;
     align-items: center;
     flex-direction: column;
-    height:90%;
+    height:100%;
     width:100%;
 }
 

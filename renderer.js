@@ -1,7 +1,9 @@
 // This file is required by the index.html file and will
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
-
+var high_light = '#1abc9c';
+var dim  = '#34495e'
+/*
 const net = require('net');
 
 function communicator(){
@@ -58,11 +60,18 @@ function communicator(){
 }
 
 var server = new communicator()
+*/
 
-
-////////////////////
-//实时流量图 chart
-////////////////////
+function appendChildren(father, children){
+    for(var i=0; i<children.length; i++){
+        father.appendChild(children[i]);
+    }
+}
+function setAttributes(element, attributes){
+    for(var i=0; i<attributes.length; i++){
+        element.setAttribute(attributes[i][0], attributes[i][1]);
+    }
+}
 
 function DataflowIndicator(){
     this.board = document.getElementById('current_speed')
@@ -182,46 +191,44 @@ function DataflowChart(){
     }
 }
 
+function ViewManager(button_list_id, view_class, view_names){
+    this.views = document.getElementsByClassName(view_class);
+    this.button_wrapper = document.getElementById(button_list_id);
+    this.view_names = view_names;
 
+    //函数
+    this.init = init;
+    this.onClickViewButton = onClickViewButton;
 
-timer = setInterval(server.requestSpeed, 1000);
-
-
-
-
-////////////////////////
-// Change view function
-////////////////////////
-function ViewManager(){
-    this.views = document.getElementByIClassName('user_view');
-    this.view_buttons = document.getElementsByClassName('view_button');
-    
-    this.active_view = view[0];
-    this.active_view_button = view_buttons[0];
+    this.init();
 
     function init(){
-        //inital button
-        var buttons = this.view_buttons;
-        focusButton(this.active_view_button); 
-        for(var i=0; i<buttons.length; i++){
-            button[i].value = i;
-            buttons[i].viewManager = this;
-            buttons[i].addEventListener('click', function(){
-                var viewManager = this.viewManager;
-                viewManager.onClickViewButton(this);
+        var view_total = (this.view_names.length < this.views.length)? this.view_names.length : this.views.length;
+        for(var i=0; i<view_total; i++){
+            var button = document.createElement('button');
+            button.value = i;
+            button.viewManager = this;
+            button.innerHTML = this.view_names[i];
+            button.addEventListener('click', function(){
+                this.viewManager.onClickViewButton(this);
             });
+            this.button_wrapper.appendChild(button);
         }
+        this.active_view = this.views[0];
+        this.active_button = this.button_wrapper.children[0];
+        this.active_view.style.display = 'flex';
+        focusButton(this.active_button)
     }
 
     function onClickViewButton(ob){
-        if(this.active_view_button != ob){
+        if(this.active_button != ob){
             this.active_view.style.display = 'none';
             this.active_view = this.views[ob.value];
             this.active_view.style.display = 'flex'
-            this.chart.resize()
-            unfocusButton(this.active_view_button)
+            //this.chart.resize()
+            unfocusButton(this.active_button)
             focusButton(ob);
-            this.active_view_button = ob;
+            this.active_button = ob;
         }
             
     }
@@ -235,15 +242,8 @@ function ViewManager(){
     
 }
 
+view_manager = new ViewManager("view_buttons", "user_view", ["系统状态", "流量来源", "策略管理", "click管理"]);
 
-/////////////////////////
-// 流量监控尺度切换
-/////////////////////////
-
-
-/////////////////////////
-// 流量来源饼状图
-/////////////////////////
 function FlowSourceChart(){
     this.chart = echarts.init(document.getElementById('pie_chart'));
 
@@ -291,16 +291,6 @@ function FlowSourceChart(){
     this.chart.setOption(chart_option)
                 
 }
-
-window.onresize = function(){
-    dataflowChart.chart.resize();
-    flowSourceChart.chart.resize();
-};
-
-
-////////////////////////////
-//来源界面显示模式切换
-///////////////////////////
 function SourceViewStyleManager(){
     this.pie_style = document.getElementById('pie_chart_wrapper');
     this.list_style = document.getElementById('list_wrapper');
@@ -321,348 +311,282 @@ function SourceViewStyleManager(){
     }
 }
 
-
-function InteractForm(){
+function InteractForm(table_id, pagination_id){
     //table
-    this.table_ob = document.getElementById('table');
-    this.thead_ob = this.table_ob.children[0];
-    this.tbody_ob = this.table_ob.children[1];
-
+    this.table_ob = document.getElementById(table_id);
+    this.table_ob.setAttribute('border', '0');
+    this.table_ob.setAttribute('cellspacing', '0');
+    this.thead_ob = document.createElement('thead');
+    this.tbody_ob = document.createElement('tbody');
+    appendChildren(this.table_ob, [this.thead_ob, this.tbody_ob])
+   
     //pagination
-    this.pagination_ob = document.getElementById('pagination');
-    this.last_button_ob = this.pagination_ob.children[0];
-    this.num_button_wrapper = this.pagination_ob.children[1];
-    this.next_button_ob = this.pagination_ob.children[2];
+    this.pagination_ob = document.getElementById(pagination_id);
+    this.last_button_ob = document.createElement('li');
+    this.last_button_ob.innerHTML = '<';
+    this.num_button_wrapper = document.createElement('span');
+    this.next_button_ob = document.createElement('li');
+    this.next_button_ob.innerHTML = '>';
+    appendChildren(this.pagination_ob, [this.last_button_ob, this.num_button_wrapper, this.next_button_ob]);
 
-    //
+    //table header data
     this.col_amount = 3;
     this.col_content = ['col1', 'col2', 'col3'];
 
-    //
+    //table state
+    //页内
+    this.cp_focus = 0;
+    this.cp_row_amount = 0;
+    //页间
     this.cp = 0;
-    this.item_offset = 0;
-    this.cp_item_amount = 0
+    this.cp_row_offset = 0;
     this.page_total = 0;
+
+    //table attr
     this.max_per_page = 10;
 
     this.buff = new Array();
     this.allowEdit = false;
 
-    function generateRowItem(){
-        var items = new Array();
-        return items;
+    //数据管理
+    this.dataProvider = new Object();
+    this.dataProvider.remote = null;
+    this.dataProvider.form = this;
+    this.dataProvider.requestPageData = function(a,b){
+        //this.remote.requestData()
+        var data = [[1,2,3],[1,2,3]];
+        this.form.loadPage(data);
+    };
+    this.dataProvider.requestInitData = function(){
+        this.form.init(10);
     }
 
-    function addRow(items){
-        if(this.cp_item_amount < this.max_per_page){
+    //接口函数定义
+    this.generateTds = generateTds;
+    this.onClickRow = onClickRow;
+    this.onChangePage = onChangePage;
+    this.setEditable = setEditable;
+
+    //内部函数定义
+    this.init = init;
+    this.setPaginationLastNextButton = setPaginationLastNextButton;
+    this.setPaginationButtonFocus = setPaginationButtonFocus;
+    this.setPaginationButtonState = setPaginationButtonState;
+    this.initPagination = initPagination;
+    this.initThead = initThead;
+    this.setPage = setPage;
+    this.loadPage = loadPage;
+    this.init = init;
+    this.addTr = addTr;
+
+    this.dataProvider.requestInitData();
+    
+    //接口
+    function generateTds(row_data){
+        var tds = new Array();
+        for(var i=0; i<row_data.length; i++){
+            var td = document.createElement('td');
+            td.innerHTML = row_data[i];
+            tds.push(td);
+        }
+        return tds;
+    }
+    function setEditable(flag){
+        alert(flag);
+        this.allowEdit = flag;
+    }
+    function onClickRow(ob){
+        alert(ob.sn);
+    }
+    function onChangePage(ob){
+        alert(ob.p_value);
+    }
+    
+    
+
+    function setPaginationLastNextButton(){
+        if(this.cp == 0){
+            this.last_button_ob.style.visibility = 'hidden';
+        }else{
+            this.last_button_ob.style.visibility = 'visible';
+        }
+    
+        if(this.cp == this.page_total - 1){
+            this.next_button_ob.style.visibility = 'hidden';
+        }else{
+            this.next_button_ob.style.visibility = 'visible';
+        }
+    }
+    function setPaginationButtonFocus(focus, page_num){
+        if(focus == true){
+            this.num_button_wrapper.children[page_num].style.backgroundColor = '#1abc9c';
+        }else{
+            this.num_button_wrapper.children[page_num].style.backgroundColor = '#34495e';
+        }
+    }
+
+    function setPaginationButtonState(page_num){
+        this.setPaginationLastNextButton();
+        this.setPaginationButtonFocus(false, this.cp);
+        this.setPaginationButtonFocus(true, page_num);
+    }
+
+    function pagination_button_callback(){
+        this.form.onChangePage(this);
+    }
+
+    function initPagination(){
+        if(this.page_total > 1){
+            //初始化控件
+            this.last_button_ob.p_value = 'l';
+            this.last_button_ob.form = this;
+            this.last_button_ob.addEventListener('click', pagination_button_callback);
+            this.next_button_ob.p_value = 'n';
+            this.next_button_ob.form = this;
+            this.next_button_ob.addEventListener('click', pagination_button_callback);
+    
+            for(var i=0; i<this.page_total; i++){
+                var li = document.createElement('li');
+                li.p_value = i;
+                li.innerHTML = i + 1;
+                li.form = this;
+                li.addEventListener('click', pagination_button_callback);
+                this.num_button_wrapper.appendChild(li);
+    
+            }
+            //设置控件显示状态
+            this.pagination_ob.style.display = "flex";
+            this.setPaginationButtonState(this.cp);
+        }
+        
+
+       
+    }
+
+    function initThead(){
+        var tr = document.createElement('tr');
+        for(var i=0; i<this.col_amount; i++){
+            var th = document.createElement('th');
+            th.innerHTML = this.col_content[i];
+            tr.appendChild(th);
+        }
+        this.thead_ob.appendChild(tr);
+    }
+
+    function init(page_total){
+        this.page_total = page_total;
+        this.initThead();
+        this.setPage(0);
+        this.initPagination();
+    }
+    
+
+    function addTr(tds){
+        if(this.cp_row_amount < this.max_per_page){
             var tr = document.createElement('tr');
+            //增加两个属性
             tr.form = this;
-            tr.sn = cp_item_amount;
+            tr.sn = this.cp_row_amount;
+            //事件监听
             tr.addEventListener('click', function(){
-                var form = tr.form;
-                form.onClickRow(this);
+                this.form.onClickRow(this);
             });
 
-            for(var i=0; i<items.length; i++){
-                tr.appendChild(items[i]);
+            if(tds.length != this.col_amount){
+                console.warn("Data doesn't match col amount");
+            }
+
+            for(var i=0; i<tds.length; i++){
+                tr.appendChild(tds[i]);
             }
             this.tbody_ob.appendChild(tr);
-            cp_item_amount++;
+            this.cp_row_amount++;
         }
     }
 
+    function setPage(page_num){
+        //调整页际属性
+        this.cp = page_num;
+        this.cp_row_offset = page_num * this.max_per_page;
+        //初始化页内属性
+        this.cp_focus = 0;
+        this.cp_row_amount = 0;
+
+        
+        //请求服务器数据
+        this.dataProvider.requestPageData(this.cp_row_offset, this.max_per_page);
+    }
+
+    function loadPage(data){
+        var total = (data.length < this.max_per_page)? data.length : this.max_per_page;
+        for(var i=0; i<total; i++){
+            var tds = this.generateTds(data[i]);
+            this.addTr(tds);
+        }
+    }
 }
 
+source_form = new InteractForm('source_table', 'source_pagination');
+strategy_form = new InteractForm('strategy_table', 'strategy_pagination');
+click_form = new InteractForm('click_table', 'click_pagination');
+window.onresize = function(){
+    dataflowChart.chart.resize();
+    flowSourceChart.chart.resize();
+};
 
-/////////////////////////////
-// strategy form
-////////////////////////////
-var current_item_focus = -1;
-var current_last_item_sn = 0;
-var max_item_per_page = 2;
+/*
+<div class="source_nav">
+    <div id="search_bar">
+        <input id = "source_search" type="text" placeholder="search" onchange="onSearchChange(this)">
+        <button class="cb">搜索</button>
+    </div>
+</div>
+*/
 
-var current_page_sn = 1;
-var page_total = 2;
-var offset = 0;
-var table = document.getElementById('strategy_table');
-var itemlist = new Array();
-var data_query = 'normal';
-var strategy_display_area = document.getElementById('strategy_check').firstElementChild;
+function NavBar(nv_id){
+    this.nav = document.getElementById(nv_id);
+    this.left_wrapper = document.createElement('div');
+    this.right_wrapper = document.createElement('div');
+    this.left_wrapper.style.paddingLeft = "10px";
+    this.right_wrapper.style.paddingRight = "10px";
+    appendChildren(this.nav, [this.left_wrapper, this.right_wrapper]);
 
-
-function initAttr(){
-    var inital_current_item_focus = -1;
-    var inital_current_last_item_sn = 0;
-    var inital_max_item_per_page = 2;
-    var inital_current_page_sn = 0;
-    var inital_page_total = 2;
-
-    current_item_focus = inital_current_item_focus;
-    current_last_item_sn = inital_current_last_item_sn;
-    max_item_per_page = inital_max_item_per_page;
-
-    offset = 0;
-    current_page_sn = inital_current_page_sn;
-    page_total = inital_page_total;
-}
-
-//###################
-//  填充表格,翻页操作
-//###################
-
-function addRow(data){
-    var tbody = table.children[1];
-    var tr = document.createElement('tr');
-    tr.setAttribute('value', current_last_item_sn);
-    tr.setAttribute('onclick', 'onClickStrategyItem(this)')
+    //功能函数
+    this.initSearchBar = initSearchBar;
+    this.addLeftButton = addLeftButton;
+    this.addRightButton = addRightButton;
+    //接口
     
-    var td_list = new Array();
-    for(var i=0;i<data.length;i++){
-        var td = document.createElement('td');
-        td.innerHTML = data[i];
-        td_list.push(td)
+    function initSearchBar(buttonEventHandle){
+        //初始化搜索栏
+        this.searchBarWrapper = document.createElement('div');
+        this.inputElement = document.createElement('input');
+        setAttributes(this.inputElement, [['type','text'], ['placeholder', 'Search']]);
+        this.searchButton = document.createElement('button');
+        this.searchButton.innerHTML = "搜索"
+        this.searchButton.navBar = this;
+        this.searchButton.addEventListener('click', buttonEventHandle)
+        appendChildren(this.searchBarWrapper, [this.inputElement, this.searchButton]);
+        this.left_wrapper.appendChild(this.searchBarWrapper);
+        this.left_wrapper.style.paddingLeft = "0";
+        
     }
-    for(var i=0;i<td_list.length;i++){
-        tr.appendChild(td_list[i])
+    function addLeftButton(button_name, buttonEventHandle){
+        var button = document.createElement('button');
+        button.innerHTML = button_name;
+        button.navBar = this;
+        button.addEventListener('click', buttonEventHandle);
+        this.left_wrapper.appendChild(button);
     }
-    tbody.appendChild(tr);
-    itemlist.push(tr);
-    current_last_item_sn++;
-}
-
-//生成一行数据, raw_data格式如下[Num, name, description, enable], 该函数定义了行内格式
-function generate_row_data(raw_data){
-    var data = new Array();
-    var enable = (raw_data[3] == true)? 'checked="checked"' : '';
-    data.push('<input name="enable" type="checkbox" value="' + raw_data[0] + '"' +  enable + 'onchange="onChoose(this)" disabled="disabled">');
-    for(var i=1;i<raw_data.length - 1;i++){
-        data.push(raw_data[i]);
-    }
-    return data;
-}
-
-//载入数据到表格
-function loadForm(form_data){
-    //var checkbox = document.getElementsByName('enable');
-    for(var i=0;i<form_data.length;i++){
-        var data = generate_row_data(form_data[i]);
-        addRow(data);
+    function addRightButton(button_name, buttonEventHandle){
+        var button = document.createElement('button');
+        button.innerHTML = button_name;
+        button.navBar = this;
+        button.addEventListener('click', buttonEventHandle);
+        this.right_wrapper.appendChild(button);
     }
 }
 
-//翻页，重新填充表格
-function changePage(page_sn){
-    offset = page_sn * max_item_per_page;
-    current_page_sn = page_sn;
-    current_last_item_sn = offset;
-    var form_data = getFormData(offset, max_item_per_page);
-    var tbody = table.children[1];
-    tbody.innerHTML = "";
-    current_item_focus = -1;
-    itemlist = [];
-    loadForm(form_data);
-}
-
-
-
-//后台数据接口
-function getFormData(offset, amount){
-    var a = [];
-    if(offset == 0){
-        a.push([2,'hi','hi',false])
-        a.push([1,'hello','hello',true]);
-    }else if(offset == 2){
-        a.push([3,'hdddd','hi',false])
-        a.push([4,'haaaa','hello',true]);
-    }
-  
-    return a;
-}
-
-function getBackendData(){
-
-}
-
-//################
-// 处理表格项目点击
-//###############
-function unfocus(ob){
-    ob.style.backgroundColor = 'lightcyan';
-    ob.style.color = 'black';
-}
-
-function focus(ob){
-    ob.style.backgroundColor = '#1abc9c';
-    ob.style.color = 'white';
-}
-
-function getStrategyContent(num){
-    return 'waiting for server\' response';
-}
-function onClickStrategyItem(ob){
-    var num = Number(ob.getAttribute('value'));
-    if(current_item_focus != -1){
-        unfocus(itemlist[current_item_focus]);
-    }
-    strategy_display_area.innerHTML = getStrategyContent(num);
-    current_item_focus = num - offset;
-    focus(ob)
-}
-
-//###################
-//strategy checkbox
-//###################
-function onChoose(object){
-}
-
-//##################
-//  启动和退出编辑
-//##################
-var edit = false;
-function editEnable(enable){
-    //进入/退出编辑状态的UI切换
-    edit = enable;
-    var b_editing = document.getElementsByClassName('b_editing');
-    var b_edited = document.getElementsByClassName('b_edited');
-    var checkbox = document.getElementsByName('enable');
-    if(enable == true){
-        var b_editing_display = "inline";
-        var b_edited_display = "none";
-        for(var i=0;i<checkbox.length;i++){
-            checkbox[i].removeAttribute('disabled');
-        }
-    }else{
-        b_editing_display = "none";
-        b_edited_display = "inline";
-        for(var i=0;i<checkbox.length;i++){
-            checkbox[i].setAttribute('disabled','disabled');
-        }
-    }
-
-    for(var i=0;i<b_editing.length;i++){
-        b_editing[i].style.display = b_editing_display;
-    }
-
-    for(var i=0;i<b_edited.length;i++){
-        b_edited[i].style.display = b_edited_display;
-    }
-}
-
-function onEnableEdit(){
-    editEnable(true);
-}
-
-function onDisableEdit(ob){
-    editEnable(false);
-    if(ob.innerHTML == '取消'){
-        alert('未保存');
-    }else{
-        alert('已保存');
-        var checkbox = document.getElementsByName('enable');
-        for(var i=0;i<checkbox.length;i++){
-            alert(checkbox[i].checked);
-        }
-    }
-
-}
-
-var strategy_pagination = document.getElementById('s_p');
-var last_button = strategy_pagination.firstElementChild.children[0];
-var next_button = strategy_pagination.firstElementChild.children[2];
-//#################################
-//  翻页指示器（切换翻页按钮的高亮状态）
-//#################################
-var page_indicators = strategy_pagination.getElementsByTagName('span')[0].children;
-function setPageIndicator(enable){
-    if(enable == true){
-        page_indicators[current_page_sn].style.backgroundColor = '#1abc9c';
-    }else{
-        page_indicators[current_page_sn].style.backgroundColor = '#34495e';
-    }
-}
-
-
-//##################
-//  翻页事件
-//##################
-function setNextLastButton(){
-    if(current_page_sn == 0){
-        last_button.style.visibility = 'hidden';
-    }else{
-        last_button.style.visibility = 'visible';
-    }
-
-    if(current_page_sn == page_total - 1){
-        next_button.style.visibility = 'hidden';
-    }else{
-        next_button.style.visibility = 'visible';
-    }
-}
-
-function onStrategySwitchPage(ob){
-    if(edit == true){
-        var result = confirm("是否继续，将丢失当前未保存的信息");
-        if(result == false){
-            return;
-        }else{
-            editEnable(false);
-        }
-    }
-    var value = ob.getAttribute('value');
-    setPageIndicator(false);
-    switch(value){
-        case 'l':
-            current_page_sn = current_page_sn - 1;
-            break;
-        case 'n':
-            current_page_sn = current_page_sn + 1;
-            break;
-        default:
-            value = Number(value);
-            current_page_sn = value - 1;
-            break;
-    }
-    setNextLastButton();
-    changePage(current_page_sn);
-    setPageIndicator(true);
-}
-
-//#############
-//  初始化
-//#############
-function initalForm(){
-    
-    initAttr();
-    if(page_total > 1){
-        strategy_pagination.style.display='flex';
-    }
-    setNextLastButton();
-    changePage(0);
-    setPageIndicator(true);
-}
-
-initalForm();
-////////////////////////
-// search event
-////////////////////////
-function onSearchChange(ob){
-}
-
-function onSearchBarBlur(ob){
-    if(ob.value == ""){
-        ob.style.backgroundColor = '#19997f';
-    }
-}
-function onSearchBarFocus(ob){
-    if(ob.value == ""){
-        ob.style.backgroundColor = '#1abc9c';
-    }
-}
-
-////////////////////////////
-//  click manager
-////////////////////////////
-function onAddClick(){
-    var name = prompt('请输入新建click的名称');
-    setInterval("alert('创建成功')", 1000);
-}
+source_nav = new NavBar('source_nav_bar');
+strategy_nav = new NavBar('strategy_nav_bar');
+click_nav = new NavBar('click_nav_bar');

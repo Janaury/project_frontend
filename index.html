@@ -18,15 +18,18 @@
       <div class = "user_view">
         首页不一样
       </div>
-      <div id="source_view" class = "user_view">
-        <div class="j_navigation" id="source_nav_bar"></div>
-        <div id="pie_chart_wrapper" class = "wrapper"><div id="pie_chart" style="height:100%;width:100%"></div></div>
-        <div id="list_wrapper">
-          <div class="table_wrapper">
-            <table id = "source_table" class = "j_table"></table>
+      <div id = "source_view" class = "user_view">
+        <div class = "j_navigation" id="source_nav_bar"></div>
+        <div class = "source_view_style wrapper content_view_style_wrapper">
+            <div class="wrapper table_wrapper">
+              <table id = "source_table" class = "j_table"></table>
+            </div>
+            <ul id = "source_pagination" class = "j_pagination" style="display: none"></ul>
           </div>
-          <ul id = "source_pagination" class = "j_pagination" style="display: none"></ul>
+        <div class = "source_view_style wrapper content_view_style_wrapper">
+          <div id="pie_chart" style="height:100%;width:100%"></div>
         </div>
+      
       </div>
       <div class = "user_view">
         <div class="j_navigation" id="strategy_nav_bar"></div>

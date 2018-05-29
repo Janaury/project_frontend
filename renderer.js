@@ -3,6 +3,82 @@
 // All of the Node.js APIs are available in this process.
 var high_light = '#1abc9c';
 var dim  = '#34495e'
+
+/**简化操作的函数 */
+function appendChildren(father, children){
+    for(var i=0; i<children.length; i++){
+        father.appendChild(children[i]);
+    }
+}
+function setAttributes(element, attributes){
+    for(var i=0; i<attributes.length; i++){
+        element.setAttribute(attributes[i][0], attributes[i][1]);
+    }
+}
+function removeAttributes(element, attributes){
+    for(var i=0; i<attributes.length; i++){
+        element.removeAttribute(attributes[i]);
+    }
+}
+
+/*多个元素操作*/
+function removeAttr(attr_name){
+    if(this instanceof Array || this instanceof HTMLCollection){
+        for(var i=0; i<this.length; i++){
+            this[i].removeAttribute(attr_name);
+        }
+    }else{
+        this.removeAttribute(attr_name);
+    }
+}
+function setAttr(attr_name, attr_value){
+    if(this instanceof Array || this instanceof HTMLCollection){
+        for(var i=0; i<this.length; i++){
+            this[i].setAttribute(attr_name, attr_value);
+        }
+    }else{
+        this.setAttribute(attr_name, attr_value);
+    }
+}
+function onEvent(event, callback){
+    if(this instanceof Array || this instanceof HTMLCollection){
+        for(var i=0; i<this.length; i++){
+            this[i].addEventListener(event, callback);
+        }
+    }else{
+        this.addEventListener(event, callback);
+    }
+}
+function setInvisible(){
+    if(this instanceof Array || this instanceof HTMLCollection){
+        for(var i=0; i<this.length; i++){
+            this[i].style.display = "none";
+        }
+    }else{
+        this.style.display = "none";
+    }
+    
+}
+function setVisible(){
+    if(this instanceof Array || this instanceof HTMLCollection){
+        for(var i=0; i<this.length; i++){
+            this[i].style.display = "inline-flex";
+        }
+    }else{
+        this.style.display = "inline-flex";
+    }
+   
+}
+
+function loadMagicPower(elements){
+    elements.setInvisible = setInvisible;
+    elements.setVisible = setVisible;
+    elements.onEvent = onEvent;
+    elements.setAttr = setAttr;
+    elements.removeAttr = removeAttr;
+}
+
+
 /*
 const net = require('net');
 
@@ -62,16 +138,6 @@ function communicator(){
 var server = new communicator()
 */
 
-function appendChildren(father, children){
-    for(var i=0; i<children.length; i++){
-        father.appendChild(children[i]);
-    }
-}
-function setAttributes(element, attributes){
-    for(var i=0; i<attributes.length; i++){
-        element.setAttribute(attributes[i][0], attributes[i][1]);
-    }
-}
 
 function DataflowIndicator(){
     this.board = document.getElementById('current_speed')
@@ -242,7 +308,6 @@ function ViewManager(button_list_id, view_class, view_names){
     
 }
 
-view_manager = new ViewManager("view_buttons", "user_view", ["系统状态", "流量来源", "策略管理", "click管理"]);
 
 function FlowSourceChart(){
     this.chart = echarts.init(document.getElementById('pie_chart'));
@@ -291,27 +356,24 @@ function FlowSourceChart(){
     this.chart.setOption(chart_option)
                 
 }
-function SourceViewStyleManager(){
-    this.pie_style = document.getElementById('pie_chart_wrapper');
-    this.list_style = document.getElementById('list_wrapper');
-    this.active_style = list_style;
+function ViewStyleManager(view_style_class){
+    this.styles = document.getElementsByClassName(view_style_class);
+    this.active_style = this.styles[0];
 
-    function change_view_style(ob){
-        this.active_style.style.display = "none";
-        var option = ob.value;
-        if(option == 'Form'){
-            this.list.style.display = "flex";
-            this.active_style = this.list_style;
-        }
-        else{
-            this.pie_style.style.display = "flex";
-            this.active_style = this.pie_style;
-            flowSourceChart.resize();
-        }
+    this.init = init;
+    this.init();
+    function init(){
+        this.active_style.style.display = "flex";
+    }
+    function change_view_style(){
+        this.styleManager.active_style.style.display = "none";
+        var option = Number(this.value);
+        this.styleManager.active_style = this.styles[option];
+        this.styleManager.active_style.display = "flex";
     }
 }
 
-function InteractForm(table_id, pagination_id){
+function InteractForm(table_id, pagination_id, col_amount = 3, col_content = ['col1', 'col2', 'col3']){
     //table
     this.table_ob = document.getElementById(table_id);
     this.table_ob.setAttribute('border', '0');
@@ -330,8 +392,8 @@ function InteractForm(table_id, pagination_id){
     appendChildren(this.pagination_ob, [this.last_button_ob, this.num_button_wrapper, this.next_button_ob]);
 
     //table header data
-    this.col_amount = 3;
-    this.col_content = ['col1', 'col2', 'col3'];
+    this.col_amount = col_amount;
+    this.col_content = col_content;
 
     //table state
     //页内
@@ -354,11 +416,12 @@ function InteractForm(table_id, pagination_id){
     this.dataProvider.form = this;
     this.dataProvider.requestPageData = function(a,b){
         //this.remote.requestData()
-        var data = [[1,2,3],[1,2,3]];
+        var data = [[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3]];
+        var data = [[0, 1, 2 ,'true'],[0, 1, 2 ,'true'],[0, 1, 2 ,'true'],[0, 1, 2 ,'true'],[0, 1, 2 ,'true'],[0, 1, 2 ,'true']];
         this.form.loadPage(data);
     };
     this.dataProvider.requestInitData = function(){
-        this.form.init(10);
+        this.form.init(2);
     }
 
     //接口函数定义
@@ -378,10 +441,33 @@ function InteractForm(table_id, pagination_id){
     this.loadPage = loadPage;
     this.init = init;
     this.addTr = addTr;
+    this.focusRow = focusRow;
+    this.unfocusRow = unfocusRow;
+    
 
-    this.dataProvider.requestInitData();
+    //this.dataProvider.requestInitData();
     
     //接口
+    function generateTds(data){
+        return data;
+    }
+
+    function setEditable(flag){
+        alert(flag);
+        this.allowEdit = flag;
+    }
+    function onClickRow(ob){
+        if(this.cp_focus!= -1){
+            this.unfocusRow(this.tbody_ob.children[this.cp_focus]);
+            this.focusRow(ob);
+        }
+        return true;
+    }
+    function onChangePage(ob){
+        alert(ob.p_value);
+    }
+    
+    //功能函数
     function generateTds(row_data){
         var tds = new Array();
         for(var i=0; i<row_data.length; i++){
@@ -391,18 +477,15 @@ function InteractForm(table_id, pagination_id){
         }
         return tds;
     }
-    function setEditable(flag){
-        alert(flag);
-        this.allowEdit = flag;
+    function focusRow(ob){
+        ob.style.backgroundColor = high_light;
+        ob.style.color = 'white';
+        this.cp_focus = ob.sn;
     }
-    function onClickRow(ob){
-        alert(ob.sn);
+    function unfocusRow(ob){
+        ob.removeAttribute('style');
+        this.cp_focus = -1;
     }
-    function onChangePage(ob){
-        alert(ob.p_value);
-    }
-    
-    
 
     function setPaginationLastNextButton(){
         if(this.cp == 0){
@@ -487,6 +570,9 @@ function InteractForm(table_id, pagination_id){
             //增加两个属性
             tr.form = this;
             tr.sn = this.cp_row_amount;
+            if(tr.sn % 2 != 0){
+                tr.setAttribute('class', 'second_color');
+            }
             //事件监听
             tr.addEventListener('click', function(){
                 this.form.onClickRow(this);
@@ -526,23 +612,6 @@ function InteractForm(table_id, pagination_id){
     }
 }
 
-source_form = new InteractForm('source_table', 'source_pagination');
-strategy_form = new InteractForm('strategy_table', 'strategy_pagination');
-click_form = new InteractForm('click_table', 'click_pagination');
-window.onresize = function(){
-    dataflowChart.chart.resize();
-    flowSourceChart.chart.resize();
-};
-
-/*
-<div class="source_nav">
-    <div id="search_bar">
-        <input id = "source_search" type="text" placeholder="search" onchange="onSearchChange(this)">
-        <button class="cb">搜索</button>
-    </div>
-</div>
-*/
-
 function NavBar(nv_id){
     this.nav = document.getElementById(nv_id);
     this.left_wrapper = document.createElement('div');
@@ -551,10 +620,15 @@ function NavBar(nv_id){
     this.right_wrapper.style.paddingRight = "10px";
     appendChildren(this.nav, [this.left_wrapper, this.right_wrapper]);
 
+
     //功能函数
     this.initSearchBar = initSearchBar;
     this.addLeftButton = addLeftButton;
+    this.addLeftButtons = addLeftButtons;
+    this.addRightButtons = addRightButtons;
     this.addRightButton = addRightButton;
+    this.addLeftElement = addLeftElement;
+    this.addRightElement = addRightElement;
     //接口
     
     function initSearchBar(buttonEventHandle){
@@ -571,12 +645,29 @@ function NavBar(nv_id){
         this.left_wrapper.style.paddingLeft = "0";
         
     }
+
+    function addLeftElement(element){
+        this.left_wrapper.appendChild(element);
+    }
+
+    function addRightElement(element){
+        this.right_wrapper.appendChild(element);
+    }
+
     function addLeftButton(button_name, buttonEventHandle){
         var button = document.createElement('button');
         button.innerHTML = button_name;
         button.navBar = this;
         button.addEventListener('click', buttonEventHandle);
         this.left_wrapper.appendChild(button);
+        return button;
+    }
+    function addLeftButtons(button_names){
+        var buttons = [];
+        for(var i=0; i<button_names.length; i++){
+            buttons.push(this.addLeftButton(button_names[i]));
+        }
+        return buttons;
     }
     function addRightButton(button_name, buttonEventHandle){
         var button = document.createElement('button');
@@ -584,9 +675,177 @@ function NavBar(nv_id){
         button.navBar = this;
         button.addEventListener('click', buttonEventHandle);
         this.right_wrapper.appendChild(button);
+        return button;
+    }
+    function addRightButtons(button_names){
+        var buttons = [];
+        for(var i=0; i<button_names.length; i++){
+            buttons.push(this.addRightButton(button_names[i]));
+        }
+        return buttons;
     }
 }
 
+//下拉选项框
+function SelectManager(option_names, default_selected = 0){
+    this.option_total = 0;
+
+    this.init = init;
+    this.getSelectElement = getSelectElement;
+    this.addOption = addOption;
+    this.addEventListener = addEventListener;
+
+    this.init(default_selected);
+    function init(default_selected){
+        this.select_element = document.createElement('select');
+        this.select_element.setAttribute('class', 'j_select');
+        for(var i=0; i<option_names.length; i++){
+            this.addOption(option_names[i]);
+        }
+        this.select_element.children[default_selected].setAttribute('selected','selected');
+    }
+    
+    function getSelectElement(){
+        return this.select_element;
+    }
+
+    function addOption(option_name){
+        var option = document.createElement('option');
+        option.value = this.option_total;
+        option.innerHTML = option_name;
+        this.select_element.appendChild(option);
+        this.option_total++;
+        return option;
+    }
+
+    function addEventListener(event, handle){
+        this.select_element.addEventListener(event, handle);
+    }
+}
+
+//多个button的显示和隐藏管理
+function StateButtonsManager(state_buttons){
+    this.state = 0;
+    this.stateMax = state_buttons.length;
+    
+    this.setState = setState;
+
+    for(var i=0; i<this.stateMax; i++){
+        loadMagicPower(state_buttons[i]);
+        state_buttons[i].setInvisible();
+    }
+
+    
+    function setState(state){
+        if(state < this.stateMax){
+            state_buttons[this.state].setInvisible();
+            this.state = state;
+            state_buttons[this.state].setVisible();
+        }else{
+            console.warn('beyond max state amount');
+        }
+        
+    }
+
+}
+//
+view_manager = new ViewManager("view_buttons", "user_view", ["系统状态", "流量来源", "策略管理", "click管理"]);
+
+//Source View
 source_nav = new NavBar('source_nav_bar');
+var styleSelectManager = new SelectManager(['hello','hi']);
+styleSelectManager.addEventListener('change', function(){alert(this.value)})
+
+var scaleSelectManager = new SelectManager(['年', '月', '日', '时', '分', '秒'], 5)
+scaleSelectManager.addEventListener('change', function(){alert(this.value)})
+source_nav.addRightElement(scaleSelectManager.getSelectElement());
+source_nav.addRightElement(styleSelectManager.getSelectElement());
+source_nav.initSearchBar();
+
+source_form = new InteractForm('source_table', 'source_pagination');
+source_view_style_manager = new ViewStyleManager('content_view_style_wrapper');
+
+
+
+
+
+
+//Strategy View
+
+strategy_form = new InteractForm('strategy_table', 'strategy_pagination', 3, ['启用', '策略名称', '策略描述']);
+strategy_form.generateTds = function(data){
+    var tds = [];
+    for(var i=0; i<3; i++){
+        var td = document.createElement('td');
+        switch(i){
+            case 0:
+                var input = document.createElement('input');
+                setAttributes(input, [['type','checkbox'], ['value', data[0]], ['class', 'state_list'], ['disabled', 'disabled']]);
+                if(data[3] == 'true'){
+                    input.setAttribute('checked', 'checked');
+                }
+                td.appendChild(input);
+                break;
+            default:
+                td.innerHTML = data[i];
+                break;
+        }
+        tds.push(td);
+    }
+    return tds;
+}
+strategy_form.setEditable = function(flag){
+    if(flag != this.allowEdit){
+        this.allowEdit = flag;
+        var checkboxs = this.tbody_ob.getElementsByClassName('state_list');
+        loadMagicPower(checkboxs);
+        if(flag){
+            checkboxs.removeAttr('disabled');
+        }else{
+            checkboxs.setAttr('disabled', 'disabled');
+        }
+    }
+   
+}
+
+strategy_form.dataProvider.requestInitData();
+
 strategy_nav = new NavBar('strategy_nav_bar');
+strategy_nav.initSearchBar();
+
+
+
+var button_active_edit = strategy_nav.addRightButton('编辑')
+var buttons_inactive_edit = strategy_nav.addRightButtons(['取消', '保存']);
+
+var buttons_manager = new StateButtonsManager([button_active_edit, buttons_inactive_edit]);
+buttons_manager.setState(0);
+button_active_edit.addEventListener('click', function(){
+    strategy_form.setEditable(true);
+    buttons_manager.setState(1);
+});
+
+buttons_inactive_edit.onEvent('click', function(){
+    if(this.innerHTML == '保存'){
+        alert('已保存');
+    }
+    strategy_form.setEditable(false);
+    buttons_manager.setState(0);
+    
+});
+
+
+
+
+
+
+click_form = new InteractForm('click_table', 'click_pagination', 3, ['序号', '名称', '负载']);
 click_nav = new NavBar('click_nav_bar');
+click_nav.addLeftButtons(['增加','删除']);
+click_nav.addRightButtons(['取消', '确认']);
+
+//
+window.onresize = function(){
+    dataflowChart.chart.resize();
+    flowSourceChart.chart.resize();
+};

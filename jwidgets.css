@@ -1,19 +1,26 @@
+.gone{
+    display:none;
+}
+.visible{
+    dipslay:inline-flex;
+}
 
 /*表格（分页器样式）*/
 .j_table{
     width:100%;
-    border:solid 1px #34495e;
     border-collapse: collapse;
     border-radius: 0 0 10px 10px;
+    background-color:lightcyan;
 }
-.j_table tr,td,th{
-    border:solid 1px #7b7d80;
-}
+
 .j_table thead{
     background-color: #34495e;
     color: white;
-    font-size:30px;
+    font-size:25px;
     line-height: 40px;
+}
+.j_table .second_color{
+    background-color:rgb(209, 255, 255);
 }
 .j_table tbody tr:hover{
     background-color: antiquewhite;
@@ -23,8 +30,10 @@
 }
 .j_pagination{
     display: flex;
-    padding: 0;
+    margin:0;
     max-height: 10%;
+    box-sizing: border-box;
+    font-weight: bold;
 }
 .j_pagination li{
     display: inline-flex;
@@ -57,7 +66,7 @@
     align-items: center;
     background-color:#34495e;
     border-radius: 10px;
-    color:white
+    color:white;
 }
 .j_navigation div{
     display:inline-flex;
@@ -87,6 +96,7 @@
     padding:5px 20px 5px 20px;
     border: none;
     outline:none;
+    font-weight: bold;
 }
 .j_navigation button:hover{
     background-color: #44617e;
@@ -112,4 +122,22 @@
     color: white;
     background-color: #19997f;
     border-radius: 5px;
+}
+
+/*下拉选项框*/
+.j_select{
+    background-color: #34495e;
+    color:white;
+    border:none;
+    font-size:0.75em;
+    box-sizing:border-box;
+    min-width: 70px;
+    font-weight: bold;
+    outline:none;
+}
+.j_select option{
+    font-weight: inherit;
+}
+.j_select:focus{
+    color:#1dddb7;
 }

@@ -67,10 +67,6 @@ tbody{
     background-color: #2b3c4d;
 }
 
-.wrapper{
-    display: flex;
-}
-
 .mb{
     background-color: #34495e;
     color: white;
@@ -133,14 +129,6 @@ tbody{
     align-items: center;
 }
 
-.table_wrapper{
-    width:90%;
-    height:85%;
-    background-color:lightcyan;
-    display: flex;
-    border-radius: 10px;
-
-}
 
 #left_wrapper{
     float:left;
